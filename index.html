@@ -1,222 +1,490 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Year Calendar</title>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2016%2016%22%20width%3D%2216%22%20height%3D%2216%22%3E%3Crect%20width%3D%2214%22%20height%3D%224%22%20x%3D%221%22%20y%3D%221%22%20fill%3D%22%230a58ca%22%20rx%3D%221%22%2F%3E%3Crect%20width%3D%2214%22%20height%3D%2212%22%20x%3D%221%22%20y%3D%224%22%20fill%3D%22%230d6efd%22%20rx%3D%221.5%22%20%2F%3E%3Cline%20x1%3D%221%22%20y1%3D%224%22%20x2%3D%2215%22%20y2%3D%224%22%20stroke%3D%22white%22%20stroke-width%3D%220.5%22%2F%3E%3Ccircle%20cx%3D%225%22%20cy%3D%223%22%20r%3D%220.8%22%20fill%3D%22white%22%2F%3E%3Ccircle%20cx%3D%2211%22%20cy%3D%223%22%20r%3D%220.8%22%20fill%3D%22white%22%2F%3E%3C%2Fsvg%3E" type="image/svg+xml">
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: flex-start;
-            height: 100vh;
-            margin: 0;
-        }
-        .month {
-            border: 1px solid #000;
-            margin: 5px;
-            padding: 10px;
-            width: calc(100% / 4 - 20px);
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start;
-        }
-        .month h3 {
-            text-align: center;
-            margin: 0 0 10px;
-        }
-        .days {
-            display: flex;
-            flex-wrap: wrap;
-            flex-grow: 1;
-        }
-        .day, .weekday {
-            width: calc(100% / 7);
-            text-align: center;
-            padding: 5px;
-            box-sizing: border-box;
-            position: relative;
-        }
-        .highlight-month {
-            background-color: yellow;
-        }
-        .highlight-date {
-            background-color: orange;
-        }
-        .weekday {
-            font-weight: bold;
-        }
-        .weekend {
-            background-color: lightgreen;
-        }
-        .holiday {
-            background-color: lightblue;
-        }
-        .holiday::after {
-            content: attr(data-holiday);
-            display: none;
-            position: absolute;
-            background: #333;
-            color: #fff;
-            padding: 5px;
-            border-radius: 5px;
-            top: 100%;
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-            z-index: 10;
-        }
-        .holiday:hover::after {
-            display: block;
-        }
-        @media (max-width: 1200px) {
-            .month {
-                width: calc(100% / 3 - 20px);
-            }
-        }
-        @media (max-width: 900px) {
-            .month {
-                width: calc(100% / 2 - 20px);
-            }
-        }
-        @media (max-width: 600px) {
-            .month {
-                width: 100%;
-            }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Year Calendar — US Federal Holidays</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #0b0f19;
+    --bg-card: #111827;
+    --bg-card-hover: #1a2236;
+    --bg-current: #1e293b;
+    --border: rgba(255,255,255,0.06);
+    --border-hover: rgba(255,255,255,0.12);
+    --border-current: rgba(255,255,255,0.18);
+    --text: #e2e8f0;
+    --text-dim: #64748b;
+    --text-weekend: #475569;
+    --accent: #f59e0b;
+    --holiday: #ef4444;
+    --holiday-bg: rgba(239,68,68,0.12);
+    --today: #10b981;
+    --today-bg: rgba(16,185,129,0.15);
+    --today-glow: rgba(16,185,129,0.3);
+    --weekend-col: #334155;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1.5rem 1rem;
+    overflow-x: hidden;
+  }
+
+  .year-header {
+    text-align: center;
+    margin-bottom: 1.25rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  .year-header h1 {
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1.1;
+  }
+
+  .year-header p {
+    color: var(--text-dim);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .legend {
+    display: flex;
+    gap: 1.25rem;
+    margin-bottom: 1rem;
+    font-size: 0.75rem;
+    color: var(--text-dim);
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+  }
+
+  .legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .legend-dot.holiday { background: var(--holiday); }
+  .legend-dot.today { background: var(--today); }
+  .legend-dot.weekend { background: var(--weekend-col); }
+
+  .calendar-grid {
+    display: grid;
+    width: 100%;
+    max-width: 1400px;
+    gap: 0.75rem;
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  @media (max-width: 1200px) {
+    .calendar-grid { grid-template-columns: repeat(3, 1fr); }
+  }
+
+  @media (max-width: 900px) {
+    .calendar-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+    body { padding: 1rem 0.75rem; }
+  }
+
+  @media (max-width: 600px) {
+    .calendar-grid {
+      grid-template-columns: repeat(12, 85vw);
+      overflow-x: auto;
+      scroll-snap-type: x mandatory;
+      padding-bottom: 1rem;
+      gap: 0.75rem;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: none;
+    }
+    .calendar-grid::-webkit-scrollbar { display: none; }
+    .month-card { scroll-snap-align: center; }
+    .year-header h1 { font-size: 2rem; }
+  }
+
+  .month-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1rem;
+    transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .month-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4), 0 0 0 1px var(--border-hover);
+  }
+
+  .month-card::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: var(--month-accent, var(--accent));
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+  }
+
+  .month-card:hover::after { opacity: 1; }
+
+  .month-card.current {
+    background: var(--bg-current);
+    border-color: var(--border-current);
+    box-shadow: 0 0 0 1px var(--border-current), 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .month-card.current::after {
+    opacity: 1;
+    height: 3px;
+  }
+
+  .month-card.current:hover {
+    background: #26334d;
+    border-color: rgba(255,255,255,0.25);
+    box-shadow: 0 8px 28px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.2);
+  }
+
+  .month-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin-bottom: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .month-card.current .month-title {
+    color: #fff;
+  }
+
+  .month-title span {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .month-card.current .month-title span {
+    color: #94a3b8;
+  }
+
+  .mini-cal {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+  }
+
+  .mini-cal .dh {
+    text-align: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    padding: 0.3rem 0;
+    letter-spacing: 0.02em;
+  }
+
+  .month-card.current .mini-cal .dh {
+    color: #94a3b8;
+  }
+
+  .mini-cal .dc {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: default;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    min-height: 28px;
+  }
+
+  .mini-cal .dc:hover {
+    background: rgba(255,255,255,0.08);
+    transform: scale(1.2);
+    z-index: 5;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  }
+
+  .mini-cal .dc.empty {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .mini-cal .dc.weekend {
+    color: var(--text-weekend);
+    background: rgba(51,65,85,0.25);
+  }
+
+  .mini-cal .dc.holiday {
+    background: var(--holiday-bg);
+    color: #fca5a5;
+    font-weight: 600;
+  }
+
+  .mini-cal .dc.holiday:hover {
+    background: var(--holiday);
+    color: #fff;
+    transform: scale(1.25);
+    box-shadow: 0 0 12px rgba(239,68,68,0.4);
+  }
+
+  .mini-cal .dc.today {
+    background: var(--today-bg);
+    color: #6ee7b7;
+    font-weight: 700;
+    box-shadow: 0 0 8px var(--today-glow);
+  }
+
+  .mini-cal .dc.today:hover {
+    background: var(--today);
+    color: #fff;
+    transform: scale(1.25);
+    box-shadow: 0 0 16px var(--today-glow);
+  }
+
+  .tooltip {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%) translateY(4px);
+    background: #1e293b;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #fff;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: all 0.2s ease;
+    z-index: 100;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+  }
+
+  .dc:hover .tooltip {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #1e293b;
+  }
+
+  @keyframes popIn {
+    from { opacity: 0; transform: scale(0.92) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  .month-card {
+    animation: popIn 0.5s ease backwards;
+  }
+  .month-card:nth-child(1) { animation-delay: 0.02s; }
+  .month-card:nth-child(2) { animation-delay: 0.04s; }
+  .month-card:nth-child(3) { animation-delay: 0.06s; }
+  .month-card:nth-child(4) { animation-delay: 0.08s; }
+  .month-card:nth-child(5) { animation-delay: 0.10s; }
+  .month-card:nth-child(6) { animation-delay: 0.12s; }
+  .month-card:nth-child(7) { animation-delay: 0.14s; }
+  .month-card:nth-child(8) { animation-delay: 0.16s; }
+  .month-card:nth-child(9) { animation-delay: 0.18s; }
+  .month-card:nth-child(10) { animation-delay: 0.20s; }
+  .month-card:nth-child(11) { animation-delay: 0.22s; }
+  .month-card:nth-child(12) { animation-delay: 0.24s; }
+
+  @media (max-width: 600px) {
+    .calendar-grid::-webkit-scrollbar { height: 4px; }
+    .calendar-grid::-webkit-scrollbar-track { background: transparent; }
+    .calendar-grid::-webkit-scrollbar-thumb { background: var(--text-dim); border-radius: 2px; }
+  }
+</style>
 </head>
 <body>
 
+<div class="year-header">
+  <h1 id="yearDisplay"></h1>
+  <p>United States &middot; Federal Holidays</p>
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot holiday"></div> Federal Holiday</div>
+  <div class="legend-item"><div class="legend-dot today"></div> Today</div>
+  <div class="legend-item"><div class="legend-dot weekend"></div> Weekend</div>
+</div>
+
+<div class="calendar-grid" id="grid"></div>
+
 <script>
-    const months = [
-        "January", "February", "March", "April", "May", "June",
-        "July", "August", "September", "October", "November", "December"
-    ];
-    const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var year = new Date().getFullYear();
+  document.getElementById('yearDisplay').textContent = year;
 
-    const today = new Date();
-    const currentMonth = today.getMonth();
-    const currentDate = today.getDate();
-    const currentYear = today.getFullYear();
+  var fullMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var days = ['S','M','T','W','T','F','S'];
+  var accents = ['#38bdf8','#a78bfa','#34d399','#fbbf24','#fb7185','#22d3ee','#f59e0b','#818cf8','#34d399','#f472b6','#a78bfa','#38bdf8'];
 
-    // Calculate US public holidays for the given year
-    const getUSHolidays = (year) => {
-        const thanksgiving = `${year}-11-${getNthDayOfMonth(year, 11, 4, 4)}`;
-        const dayAfterThanksgiving = new Date(thanksgiving);
-        dayAfterThanksgiving.setDate(dayAfterThanksgiving.getDate() + 2);
-        const formattedDayAfterThanksgiving = `${dayAfterThanksgiving.getFullYear()}-${String(dayAfterThanksgiving.getMonth() + 1).padStart(2, '0')}-${String(dayAfterThanksgiving.getDate()).padStart(2, '0')}`;
+  var currentMonth = new Date().getMonth();
+  var isThisYear = new Date().getFullYear() === year;
 
-        return {
-            [`${year}-01-01`]: "New Year's Day",
-            [`${year}-01-${getNthDayOfMonth(year, 1, 3, 1)}`]: "Martin Luther King Jr. Day",
-            [`${year}-02-${getNthDayOfMonth(year, 2, 3, 1)}`]: "Presidents' Day",
-            [`${year}-05-${getLastDayOfMonth(year, 5, 1)}`]: "Memorial Day",
-            [`${year}-06-19`]: "Juneteenth National Independence Day",
-            [`${year}-07-04`]: "Independence Day",
-            [`${year}-09-${getNthDayOfMonth(year, 9, 1, 1)}`]: "Labor Day",
-            [`${year}-10-${getNthDayOfMonth(year, 10, 2, 1)}`]: "Columbus Day",
-            [`${year}-11-11`]: "Veterans Day",
-            [thanksgiving]: "Thanksgiving Day",
-            [formattedDayAfterThanksgiving]: "Day after Thanksgiving",
-            [`${year}-12-25`]: "Christmas Day"
-        };
-    };
-
-    const getNthDayOfMonth = (year, month, n, day) => {
-        const date = new Date(year, month - 1, 1);
-        let count = 0;
-        while (count < n) {
-            if (date.getDay() === day) {
-                count++;
-            }
-            if (count < n) {
-                date.setDate(date.getDate() + 1);
-            }
-        }
-        return date.getDate();
-    };
-
-    const getLastDayOfMonth = (year, month, day) => {
-        const date = new Date(year, month, 0);
-        while (date.getDay() !== day) {
-            date.setDate(date.getDate() - 1);
-        }
-        return date.getDate();
-    };
-
-    const holidays = getUSHolidays(currentYear);
-
-    const daysInMonth = (month, year) => new Date(year, month, 0).getDate();
-
-    for (let i = 0; i < 12; i++) {
-        const monthDiv = document.createElement('div');
-        monthDiv.classList.add('month');
-        if (i === currentMonth) monthDiv.classList.add('highlight-month');
-
-        const monthTitle = document.createElement('h3');
-        monthTitle.innerText = months[i];
-        monthDiv.appendChild(monthTitle);
-
-        const daysDiv = document.createElement('div');
-        daysDiv.classList.add('days');
-
-        // Add weekdays headers
-        weekdays.forEach(weekday => {
-            const weekdayDiv = document.createElement('div');
-            weekdayDiv.classList.add('weekday');
-            if (weekday === "Sun" || weekday === "Sat") {
-                weekdayDiv.classList.add('weekend');
-            }
-            weekdayDiv.innerText = weekday;
-            daysDiv.appendChild(weekdayDiv);
-        });
-
-        // Calculate the starting day of the month
-        const firstDay = new Date(currentYear, i, 1).getDay();
-        
-        // Add empty divs for the days before the first day of the month
-        for (let e = 0; e < firstDay; e++) {
-            const emptyDiv = document.createElement('div');
-            emptyDiv.classList.add('day');
-            daysDiv.appendChild(emptyDiv);
-        }
-
-        // Add days
-        for (let d = 1; d <= daysInMonth(i + 1, currentYear); d++) {
-            const dayDiv = document.createElement('div');
-            dayDiv.classList.add('day');
-            const dateStr = `${currentYear}-${String(i + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
-            if (i === currentMonth && d === currentDate) dayDiv.classList.add('highlight-date');
-            if (holidays[dateStr]) {
-                dayDiv.classList.add('holiday');
-                dayDiv.setAttribute('data-holiday', holidays[dateStr]);
-            }
-            if (new Date(currentYear, i, d).getDay() === 0 || new Date(currentYear, i, d).getDay() === 6) {
-                dayDiv.classList.add('weekend');
-            }
-            dayDiv.innerText = d;
-            daysDiv.appendChild(dayDiv);
-        }
-
-        // Ensure all months have 6 rows
-        const totalDays = firstDay + daysInMonth(i + 1, currentYear);
-        const totalRows = Math.ceil(totalDays / 7);
-        if (totalRows < 6) {
-            for (let e = totalRows * 7; e < 42; e++) {
-                const emptyDiv = document.createElement('div');
-                emptyDiv.classList.add('day');
-                daysDiv.appendChild(emptyDiv);
-            }
-        }
-
-        monthDiv.appendChild(daysDiv);
-        document.body.appendChild(monthDiv);
+  function getNthWeekdayOfMonth(y, m, weekday, n) {
+    var firstDay = new Date(y, m, 1).getDay();
+    var offset = (weekday - firstDay + 7) % 7;
+    var day;
+    if (n > 0) {
+      day = 1 + offset + (n - 1) * 7;
+    } else {
+      var daysInMonth = new Date(y, m + 1, 0).getDate();
+      day = daysInMonth - ((new Date(y, m, daysInMonth).getDay() - weekday + 7) % 7);
     }
+    return day;
+  }
+
+  function getHolidaysForYear(y) {
+    var h = {};
+
+    var ny = new Date(y, 0, 1);
+    var nyDow = ny.getDay();
+    if (nyDow === 0) h['1-2'] = "New Year's Day (observed)";
+    else h['1-1'] = "New Year's Day";
+
+    h['1-' + getNthWeekdayOfMonth(y, 0, 1, 3)] = "MLK Jr. Day";
+    h['2-' + getNthWeekdayOfMonth(y, 1, 1, 3)] = "Presidents' Day";
+    h['5-' + getNthWeekdayOfMonth(y, 4, 1, -1)] = "Memorial Day";
+
+    var jun = new Date(y, 5, 19);
+    var junDow = jun.getDay();
+    if (junDow === 0) h['6-20'] = "Juneteenth (observed)";
+    else h['6-19'] = "Juneteenth";
+
+    var id = new Date(y, 6, 4);
+    var idDow = id.getDay();
+    if (idDow === 0) h['7-5'] = "Independence Day (observed)";
+    else h['7-4'] = "Independence Day";
+
+    h['9-' + getNthWeekdayOfMonth(y, 8, 1, 1)] = "Labor Day";
+    h['10-' + getNthWeekdayOfMonth(y, 9, 1, 2)] = "Columbus Day";
+
+    var vd = new Date(y, 10, 11);
+    var vdDow = vd.getDay();
+    if (vdDow === 0) h['11-12'] = "Veterans Day (observed)";
+    else h['11-11'] = "Veterans Day";
+
+    h['11-' + getNthWeekdayOfMonth(y, 10, 4, 4)] = "Thanksgiving";
+
+    var cd = new Date(y, 11, 25);
+    var cdDow = cd.getDay();
+    if (cdDow === 0) h['12-26'] = "Christmas Day (observed)";
+    else h['12-25'] = "Christmas Day";
+
+    return h;
+  }
+
+  var holidays = getHolidaysForYear(year);
+  var today = new Date();
+
+  function getDays(m, y) { return new Date(y, m + 1, 0).getDate(); }
+  function getFirst(m, y) { return new Date(y, m, 1).getDay(); }
+
+  function buildMonth(m) {
+    var daysCount = getDays(m, year);
+    var firstDay = getFirst(m, year);
+    var card = document.createElement('div');
+    card.className = 'month-card';
+    if (isThisYear && m === currentMonth) {
+      card.classList.add('current');
+    }
+    card.style.setProperty('--month-accent', accents[m]);
+
+    var title = document.createElement('div');
+    title.className = 'month-title';
+    title.innerHTML = fullMonths[m] + ' <span>' + daysCount + ' days</span>';
+    card.appendChild(title);
+
+    var cal = document.createElement('div');
+    cal.className = 'mini-cal';
+
+    days.forEach(function(d) {
+      var h = document.createElement('div');
+      h.className = 'dh';
+      h.textContent = d;
+      cal.appendChild(h);
+    });
+
+    for (var i = 0; i < firstDay; i++) {
+      var e = document.createElement('div');
+      e.className = 'dc empty';
+      cal.appendChild(e);
+    }
+
+    for (var d = 1; d <= daysCount; d++) {
+      var cell = document.createElement('div');
+      cell.className = 'dc';
+      cell.textContent = d;
+
+      var dow = (firstDay + d - 1) % 7;
+      var key = (m + 1) + '-' + d;
+      var isHoliday = holidays[key];
+      var isToday = isThisYear && today.getMonth() === m && today.getDate() === d;
+      var isWeekend = dow === 0 || dow === 6;
+
+      if (isHoliday) {
+        cell.classList.add('holiday');
+        var tip = document.createElement('div');
+        tip.className = 'tooltip';
+        tip.textContent = holidays[key];
+        cell.appendChild(tip);
+      }
+      if (isToday) cell.classList.add('today');
+      if (isWeekend && !isHoliday && !isToday) cell.classList.add('weekend');
+
+      cal.appendChild(cell);
+    }
+
+    card.appendChild(cal);
+    return card;
+  }
+
+  var grid = document.getElementById('grid');
+  for (var i = 0; i < 12; i++) grid.appendChild(buildMonth(i));
 </script>
 
 </body>
